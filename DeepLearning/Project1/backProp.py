@@ -71,7 +71,7 @@ def calcOut(layers):
         for indx in range(0,len(last_neurons)):
             neuron = last_neurons[indx]
             out = neuron.out
-        
+
             y_out[indx, column] = out
             
         # need to track the weight changes
@@ -115,12 +115,18 @@ if __name__ == '__main__':
     error = calcError(y_out)
     print('error is %f ' % (error))
     
-    for indx in range(0, 20):
-        # rerun schtuff
+    for indx in range(0, 30):
+        # calculate output
         y_out = calcOut(layers)
-        error = calcError(y_out)
+        
+        # update weights
         updateWeights(layers)
+        
+        
+        # calculate error
+        error = calcError(y_out)
         print('error is %f ' % (error))
+    
     
     
     

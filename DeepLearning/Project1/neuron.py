@@ -33,7 +33,13 @@ class Neuron(object):
         # if last layer, weights are to output layer
         # initialize weights to 1
         for indx in range(0, numOf_weights):
-            self.weights.append(1)
+            # account for bias
+            if(indx == numOf_weights - 1):
+                self.weights.append(varis.bias)
+            else:
+                self.weights.append(1)
+            
+        
             
         # for updating weights
         self.weights_updated = self.weights
@@ -46,7 +52,7 @@ class Neuron(object):
     def calcOut(self, previous_layer):
         # last weight is a bias
         # add bias
-        sum = self.weights[len(self.weights) - 1]
+        sum = 0
         
         # sum up weights multiplied by output of neurons
         for indx in range(0,len(previous_layer.neurons)):
@@ -97,6 +103,7 @@ class Neuron(object):
     # update weights of system
     def updateWeights(self):
         self.weights = self.weights_updated
+        self.weights_updated = []
                 
 
 
