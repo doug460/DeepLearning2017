@@ -10,13 +10,15 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import time, shutil, os
 
+saveDir = 'PartA Stuff/'
+
 # Architecture
 n_hidden_1 = 256
 n_hidden_2 = 256
 
 # Parameters
 learning_rate = 0.01
-training_epochs = 5 # NOTE: you'll want to eventually change this 
+training_epochs = 2 # NOTE: you'll want to eventually change this 
 batch_size = 100
 display_step = 1
 
@@ -57,6 +59,7 @@ def evaluate(output, y):
     return accuracy
 
 
+# save the weights of the first images
 def saveWeights1(W):
     w_out = sess.run(W)
     w_out_less = w_out[:,0:10]
@@ -67,7 +70,7 @@ def saveWeights1(W):
         matrix = np.reshape(image, (28,28))
         plt.imshow(matrix)
         
-        buf = 'PartA Images/weights_b/w1_data_%d.png' % (indx)
+        buf = saveDir + 'weights_b/w1_data_%d.png' % (indx)
         title = 'Node %d' % (indx)
         plt.title(title)
         plt.savefig(buf)
@@ -151,6 +154,8 @@ if __name__ == '__main__':
 
             # saver.restore(sess, "mlp_logs/model-checkpoint-66000")
 
+            # save accuracies 
+            accuracies = []
 
             # Training cycle
             for epoch in range(training_epochs):
@@ -176,8 +181,11 @@ if __name__ == '__main__':
                     summary_writer.add_summary(summary_str, sess.run(global_step))
 
                     saver.save(sess, "mlp_logs/model-checkpoint", global_step=global_step)
+                    
+                
+                
+                accuracies.append(sess.run(eval_op, feed_dict={x: mnist.test.images, y: mnist.test.labels}))
 
-            print("w1 is ", W1)
             saveWeights1(W1)
 
             print("Optimization Finished!")
@@ -186,4 +194,20 @@ if __name__ == '__main__':
             accuracy = sess.run(eval_op, feed_dict={x: mnist.test.images, y: mnist.test.labels})
 
             print("Test Accuracy:", accuracy)
+            
+            # plot accuracies vs iterations
+            plt.clf()
+            x = range(0, len(accuracies))
+            plt.plot(x, accuracies)
+            plt.title('Accuracy vs. Iteration')
+            plt.ylabel('Accuracy')
+            plt.xlabel('Iteration')
+            buf = saveDir + 'partA_B_acc.png'
+            plt.savefig(buf)
+            
+            buf = saveDir + 'partA_B_info.txt'
+            file  = open(buf,'w')
+            buf = "Accuracy was %f\n" % (accuracy)
+            file.write(buf)
+            file.close()
 

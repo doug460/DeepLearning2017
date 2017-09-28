@@ -18,12 +18,13 @@ import matplotlib.pyplot as plt
 # read in MNIST data --------------------------------------------------
 mnist = input_data.read_data_sets("../../data/", one_hot=True)
 
+saveDir = 'PartA Stuff/'
 
 # run network ----------------------------------------------------------
 
 # Parameters
 learning_rate = 0.01
-training_epochs = 5 # NOTE: you'll want to eventually change this 
+training_epochs = 2 # NOTE: you'll want to eventually change this 
 batch_size = 100
 display_step = 1
 
@@ -67,13 +68,15 @@ def evaluate(output, y):
 
     return accuracy
 
+# function to save the imamges of the numbers 0-9
 def saveImage(array, number):
     matrix = np.reshape(array, (28,28))
     plt.imshow(matrix, cmap = 'gray_r')
     plt.title(number)
-    buf = 'PartA Images/origonals/data_%d.png' % (number)
+    buf = saveDir + 'origonals/data_%d.png' % (number)
     plt.savefig(buf)
     
+# function to save the weights
 def saveWeights(W):
     w_out = sess.run(W)
     w_out_images = np.reshape(w_out, (784,10))
@@ -82,7 +85,7 @@ def saveWeights(W):
         matrix = np.reshape(image, (28,28))
         plt.imshow(matrix)
         
-        buf = 'PartA Images/weights_a/data_%d.png' % (indx)
+        buf = saveDir + 'weights_a/data_%d.png' % (indx)
         title = 'Number %d' % (indx)
         plt.title(title)
         plt.savefig(buf)
@@ -133,6 +136,7 @@ if __name__ == '__main__':
         # print(miniy)
         
         # save data
+        # basically go through and save one of each image
         saveImage(minix[7],  0)
         saveImage(minix[4],  1)
         saveImage(minix[13], 2)
@@ -143,6 +147,9 @@ if __name__ == '__main__':
         saveImage(minix[14], 7)
         saveImage(minix[5],  8)
         saveImage(minix[8],  9)
+        
+        # save accuracies
+        accuracies = []
 
         # Training cycle
         for epoch in range(training_epochs):
@@ -169,7 +176,9 @@ if __name__ == '__main__':
  
                 #saver.save(sess, "logistic_logs/model-checkpoint", global_step=global_step)
             
+            accuracies.append(sess.run(eval_op, feed_dict={x: mnist.test.images, y: mnist.test.labels}))
  
+        # save the weights
         saveWeights(W)
         
         
@@ -179,4 +188,18 @@ if __name__ == '__main__':
         accuracy = sess.run(eval_op, feed_dict={x: mnist.test.images, y: mnist.test.labels})
  
         print("Test Accuracy:", accuracy)
+        
+        # plot accuracies vs iterations
+        plt.clf()
+        x = range(0, len(accuracies))
+        plt.plot(x, accuracies)
+        plt.title('Accuracy vs. Iteration')
+        plt.ylabel('Accuracy')
+        plt.xlabel('Iteration')
+        plt.savefig(saveDir + 'partA_A_acc.png')
 #         
+        file  = open(saveDir + "partA_A_info.txt",'w')
+        buf = "Accuracy was %f\n" % (accuracy)
+        file.write(buf)
+        file.close()
+

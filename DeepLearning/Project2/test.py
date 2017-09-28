@@ -5,6 +5,7 @@ Created on Sep 27, 2017
 '''
 
 import sys
+from random import random
 sys.path.append('../../')
 sys.path.append('../')
 import numpy as np
@@ -17,6 +18,11 @@ import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     pass
+
+    test = [1,2,3,4]
+    print(test)
+    
+    print(test.index(2))
 
     
 
