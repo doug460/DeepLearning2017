@@ -18,6 +18,7 @@ import time, shutil, os
 from fdl_examples.datatools import input_data
 import matplotlib.pyplot as plt
 
+
 # read in MNIST data --------------------------------------------------
 mnist = input_data.read_data_sets("../../data/", one_hot=True)
 
@@ -91,18 +92,40 @@ def applyRotations(array):
     return(array)
 
 def getY(y):
-    return y
+    return(tf.argmax(y,1))
 
 def getOut(output):
-    return(output)
+    return(tf.argmax(output,1))
 
 # create the confusion matrix
 # acutal on rows
 # predicted on columns
 def createConfusion(outputs, y):
     matrix = np.zeros((10,10))
+    for indx in range(0,len(outputs)):
+        row = y[indx]
+        column = outputs[indx]
+        matrix[row,column] += 1
         
-    print(matrix)
+    plt.close()
+    plt.figure(figsize = (15,15))
+    labels = ('0','1','2','3','4','5','6','7','8','9')
+    tb = plt.table(cellText=matrix, loc=(0,0), cellLoc='center', rowLabels=labels,colLabels=labels)
+    
+    tc = tb.properties()['child_artists']
+    for cell in tc: 
+        cell.set_height(1.0/11)
+        cell.set_width(1.0/11)
+    
+    plt.title('Confusion Matrix', fontsize=25)
+    
+    tb.set_fontsize(14)
+    
+    ax = plt.gca()
+    ax.set_xticks([])
+    ax.set_yticks([])
+    
+    plt.savefig(saveDir + 'confusionMatrixB_A.png')
     
     
     
