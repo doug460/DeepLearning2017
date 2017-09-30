@@ -4,13 +4,15 @@ sys.path.append('../')
 from fdl_examples.datatools import input_data
 mnist = input_data.read_data_sets("../../data/", one_hot=True)
 
+from PartB_A import applyRotations
+
 import numpy as np
 import matplotlib.pyplot as plt
 
 import tensorflow as tf
 import time, shutil, os
 
-saveDir = 'PartA Stuff/'
+saveDir = 'PartB Stuff/'
 
 # Architecture
 n_hidden_1 = 256
@@ -18,7 +20,7 @@ n_hidden_2 = 256
 
 # Parameters
 learning_rate = 0.01
-training_epochs = 200 # NOTE: you'll want to eventually change this 
+training_epochs = 50 # NOTE: you'll want to eventually change this 
 batch_size = 100
 display_step = 1
 
@@ -101,6 +103,8 @@ def createConfusion(outputs, y):
         cell.set_width(1.0/11)
     
     plt.title('Confusion Matrix', fontsize=25)
+    plt.xlabel('Predicted', fontsize=25)
+    plt.ylabel('Actual', fontsize=25)
     
     tb.set_fontsize(14)
     
@@ -108,32 +112,8 @@ def createConfusion(outputs, y):
     ax.set_xticks([])
     ax.set_yticks([])
     
-    plt.xlabel('Predicted', fontsize=25)
-    plt.ylabel('Actual', fontsize=25)
-    
-    plt.savefig(saveDir + 'confusionMatrixA_B.png')
+    plt.savefig(saveDir + 'confusionMatrixB_B.png')
 
-# def saveWeights2(W):
-#     w_out = sess.run(W)
-#     w_out_images = np.reshape(w_out, (256,10))
-#     for indx in range(0,10):
-#         image = w_out[:,indx]
-#         matrix = np.reshape(image, (16,16))
-#         plt.imshow(matrix)
-#         
-#         buf = 'PartA Images/weights_b/w2_data_%d.png' % (indx)
-#         plt.savefig(buf)
-#         
-# def saveWeight3(W):
-#     w_out = sess.run(W)
-#     w_out_images = np.reshape(w_out, (784,10))
-#     for indx in range(0,10):
-#         image = w_out[:,indx]
-#         matrix = np.reshape(image, (28,28))
-#         plt.imshow(matrix)
-#         
-#         buf = 'PartA Images/weights_b/w3_data_%d.png' % (indx)
-#         plt.savefig(buf)
 
 if __name__ == '__main__':
     
@@ -206,6 +186,9 @@ if __name__ == '__main__':
                 # Loop over all batches
                 for i in range(total_batch):
                     minibatch_x, minibatch_y = mnist.train.next_batch(batch_size)
+                    
+                    minibatch_x = applyRotations(minibatch_x)
+                    
                     # Fit training using batch data
                     sess.run(train_op, feed_dict={x: minibatch_x, y: minibatch_y})
                     # Compute average loss
@@ -214,7 +197,7 @@ if __name__ == '__main__':
                 if epoch % display_step == 0:
                     print("Epoch:", '%04d' % (epoch+1), "cost =", "{:.9f}".format(avg_cost))
 
-                    accuracy = sess.run(eval_op, feed_dict={x: mnist.validation.images, y: mnist.validation.labels})
+                    accuracy = sess.run(eval_op, feed_dict={x: applyRotations(mnist.validation.images), y: mnist.validation.labels})
 
                     print("Validation Error:", (1 - accuracy))
 
@@ -225,7 +208,7 @@ if __name__ == '__main__':
                     
                 
                 
-                accuracies.append(sess.run(eval_op, feed_dict={x: mnist.test.images, y: mnist.test.labels}))
+                accuracies.append(sess.run(eval_op, feed_dict={x: applyRotations(mnist.test.images), y: mnist.test.labels}))
 
             saveWeights1(W1)
             
@@ -251,10 +234,10 @@ if __name__ == '__main__':
             plt.title('Accuracy vs. Iteration', fontsize=25)
             plt.ylabel('Accuracy')
             plt.xlabel('Iteration')
-            buf = saveDir + 'partA_B_acc.png'
+            buf = saveDir + 'partB_B_acc.png'
             plt.savefig(buf)
             
-            buf = saveDir + 'partA_B_info.txt'
+            buf = saveDir + 'partB_B_info.txt'
             file  = open(buf,'w')
             buf = "Accuracy was %f\n" % (accuracy)
             file.write(buf)

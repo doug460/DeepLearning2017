@@ -27,7 +27,7 @@ mnist = input_data.read_data_sets("../../data/", one_hot=True)
 
 # Parameters
 learning_rate = 0.01
-training_epochs = 1 # NOTE: you'll want to eventually change this 
+training_epochs = 50 # NOTE: you'll want to eventually change this 
 batch_size = 100
 display_step = 1
 
@@ -91,6 +91,20 @@ def applyRotations(array):
     
     return(array)
 
+# function to save the weights
+def saveWeights(W):
+    w_out = sess.run(W)
+    w_out_images = np.reshape(w_out, (784,10))
+    for indx in range(0,10):
+        image = w_out[:,indx]
+        matrix = np.reshape(image, (28,28))
+        plt.imshow(matrix)
+        
+        buf = saveDir + 'weights_a/data_%d.png' % (indx)
+        title = 'Number %d' % (indx)
+        plt.title(title, fontsize=25)
+        plt.savefig(buf)
+
 def getY(y):
     return(tf.argmax(y,1))
 
@@ -118,6 +132,8 @@ def createConfusion(outputs, y):
         cell.set_width(1.0/11)
     
     plt.title('Confusion Matrix', fontsize=25)
+    plt.xlabel('Predicted', fontsize=25)
+    plt.ylabel('Actual', fontsize=25)
     
     tb.set_fontsize(14)
     
@@ -183,12 +199,12 @@ if __name__ == '__main__':
         test = minix[1] # this is for number 3
         matrix = np.reshape(test, (28,28))
         plt.imshow(matrix)
-        plt.title('Origonal 3')
+        plt.title('Origonal 3', fontsize=25)
         plt.savefig(saveDir + 'origonal_3.png')
         
         matrix_rotate = rotate(matrix, 90, reshape = False)
         plt.imshow(matrix_rotate)
-        plt.title('3 rotated by 90')
+        plt.title('3 rotated by 90', fontsize=25)
         plt.savefig(saveDir + 'rot3.png')
         
         
@@ -239,6 +255,9 @@ if __name__ == '__main__':
         # create and save confusion matrix
         createConfusion(out_temp, y_temp)
         
+        # save the weights
+        saveWeights(W)
+        
   
         print("Test Accuracy:", accuracy)   
         
@@ -246,7 +265,7 @@ if __name__ == '__main__':
         plt.clf()
         x = range(0, len(accuracies))
         plt.plot(x, accuracies)
-        plt.title('Accuracy vs. Iteration')
+        plt.title('Accuracy vs. Iteration', fontsize=25)
         plt.ylabel('Accuracy')
         plt.xlabel('Iteration')
         plt.savefig(saveDir + 'partB_A_acc.png')

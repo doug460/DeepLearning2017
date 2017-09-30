@@ -3,10 +3,13 @@ Created on Sep 27, 2017
 
 @author: dabrown
 
-bassically using network A and display one of each image
+second part of project two. for part A
+basically no hidden layers
 '''
 
 import sys
+from scipy.ndimage.interpolation import zoom
+from random import random
 sys.path.append('../../')
 sys.path.append('../')
 import numpy as np
@@ -15,18 +18,20 @@ import time, shutil, os
 from fdl_examples.datatools import input_data
 import matplotlib.pyplot as plt
 
+
 # read in MNIST data --------------------------------------------------
 mnist = input_data.read_data_sets("../../data/", one_hot=True)
 
-saveDir = 'PartA Stuff/'
 
 # run network ----------------------------------------------------------
 
 # Parameters
 learning_rate = 0.01
-training_epochs = 200 # NOTE: you'll want to eventually change this 
+training_epochs = 50 # NOTE: you'll want to eventually change this 
 batch_size = 100
 display_step = 1
+
+saveDir = 'PartC Stuff/'
 
 
 def inference(x,W,b):
@@ -52,7 +57,6 @@ def loss(output, y):
     return loss
 
 def training(cost, global_step):
-
     tf.summary.scalar("cost", cost)
     optimizer = tf.train.GradientDescentOptimizer(learning_rate)
     train_op = optimizer.minimize(cost, global_step=global_step)
@@ -60,7 +64,7 @@ def training(cost, global_step):
     return train_op
 
 
-def evaluate(output, y):
+def evaluate(output, y):    
     correct_prediction = tf.equal(tf.argmax(output, 1), tf.argmax(y, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
@@ -68,14 +72,30 @@ def evaluate(output, y):
 
     return accuracy
 
-# function to save the imamges of the numbers 0-9
-def saveImage(array, number):
-    matrix = np.reshape(array, (28,28))
-    plt.imshow(matrix, cmap = 'gray_r')
-    plt.title(number, fontsize=25)
-    buf = saveDir + 'origonals/data_%d.png' % (number)
-    plt.savefig(buf)
+# array is image length (784) * batch length (100)
+# so 784 * 100
+def applyScaling(array):
     
+    for indx in range(0, batch_size):
+        # seperate an single image array and put it in matrix form
+        single_array = array[indx]
+        single_image = np.reshape(single_array, (28,28))
+        
+        # scale image
+        scale_amount = random() * 0.5 + 0.5
+        single_image_scale = zoom(single_image, zoom = scale_amount)
+        
+        matrix_padded = np.zeros((28,28))
+        dim = single_image_scale.shape[0]
+        start = int(28/2 - dim/2)
+        matrix_padded[start:start + dim, start:start + dim] = single_image_scale
+        
+        # return image back to array and replace in images_array
+        single_array_scale = np.reshape(matrix_padded, (784))
+        array[indx] = single_array_scale
+    
+    return(array)
+
 # function to save the weights
 def saveWeights(W):
     w_out = sess.run(W)
@@ -90,7 +110,6 @@ def saveWeights(W):
         plt.title(title, fontsize=25)
         plt.savefig(buf)
 
-      
 def getY(y):
     return(tf.argmax(y,1))
 
@@ -120,13 +139,16 @@ def createConfusion(outputs, y):
     plt.title('Confusion Matrix', fontsize=25)
     plt.xlabel('Predicted', fontsize=25)
     plt.ylabel('Actual', fontsize=25)
+    
     tb.set_fontsize(14)
     
     ax = plt.gca()
     ax.set_xticks([])
     ax.set_yticks([])
     
-    plt.savefig(saveDir + 'confusionMatrixA_A.png')
+    plt.savefig(saveDir + 'confusionMatrixC_A.png')
+    
+    
     
 
 if __name__ == '__main__':
@@ -147,6 +169,7 @@ if __name__ == '__main__':
         output = inference(x,W,b)
 
         cost = loss(output, y)
+        
 
         global_step = tf.Variable(0, name='global_step', trainable=False)
         
@@ -167,39 +190,47 @@ if __name__ == '__main__':
         init_op = tf.global_variables_initializer()
 
         sess.run(init_op)
+        
+        gety = getY(y)
+        getout = getOut(output)
 
         
         minix, miniy = mnist.train.next_batch(30)        
         # used this to see what index was what for the images
         # print(miniy)
-        
+         
         # save data
         # basically go through and save one of each image
-        saveImage(minix[7],  0)
-        saveImage(minix[4],  1)
-        saveImage(minix[13], 2)
-        saveImage(minix[1],  3)
-        saveImage(minix[2],  4)
-        saveImage(minix[27], 5)
-        saveImage(minix[3],  6)
-        saveImage(minix[14], 7)
-        saveImage(minix[5],  8)
-        saveImage(minix[8],  9)
+        test = minix[1] # this is for number 3
+        matrix = np.reshape(test, (28,28))
+        plt.imshow(matrix)
+        plt.title('Origonal 3', fontsize=25)
+        plt.savefig(saveDir + 'origonal_3.png')
+         
+        matrix_scale = zoom(matrix, 0.6)
+        matrix_padded = np.zeros((28,28))
+        dim = matrix_scale.shape[0]
+        start = int(28/2 - dim/2)
+        matrix_padded[start:start + dim, start:start + dim] = matrix_scale
+        plt.imshow(matrix_padded)
+        plt.title('3 scaled to 60%', fontsize=25)
+        plt.savefig(saveDir + 'scaled_3.png')
         
-        # save accuracies
+        
+        # want to graph accuracies
         accuracies = []
-        
-        gety = getY(y)
-        getout = getOut(output)
-
+   
         # Training cycle
         for epoch in range(training_epochs):
- 
+   
             avg_cost = 0.
             total_batch = int(mnist.train.num_examples/batch_size)
             # Loop over all batches
             for i in range(total_batch):
                 minibatch_x, minibatch_y = mnist.train.next_batch(batch_size)
+                 
+                minibatch_x = applyScaling(minibatch_x)
+                 
                 # Fit training using batch data
                 sess.run(train_op, feed_dict={x: minibatch_x, y: minibatch_y})
                 # Compute average loss
@@ -207,38 +238,38 @@ if __name__ == '__main__':
             # Display logs per epoch step
             if epoch % display_step == 0:
                 print("Epoch:", '%04d' % (epoch+1), "cost =", "{:.9f}".format(avg_cost))
- 
-                accuracy = sess.run(eval_op, feed_dict={x: mnist.validation.images, y: mnist.validation.labels})
- 
+   
+                accuracy = sess.run(eval_op, feed_dict={x: applyScaling(mnist.validation.images), y: mnist.validation.labels})
+   
                 print("Validation Error:", (1 - accuracy))
- 
+   
                 summary_str = sess.run(summary_op, feed_dict={x: minibatch_x, y: minibatch_y})
                 #summary_writer.add_summary(summary_str, sess.run(global_step))
- 
+   
                 #saver.save(sess, "logistic_logs/model-checkpoint", global_step=global_step)
-            
+             
+            # save accuries over time
             accuracies.append(sess.run(eval_op, feed_dict={x: mnist.test.images, y: mnist.test.labels}))
- 
-        # save the weights
-        saveWeights(W)
-        
-        
+          
+   
+        print("Optimization Finished!")
+           
+        accuracy = sess.run(eval_op, feed_dict={x: applyScaling(mnist.test.images), y: mnist.test.labels})
+         
         # get outputs for comparison
         # shape is ?,10
         y_temp = sess.run(gety, feed_dict={x: mnist.test.images, y: mnist.test.labels})
         out_temp = sess.run(getout, feed_dict={x: mnist.test.images, y: mnist.test.labels})
-        
+         
         # create and save confusion matrix
         createConfusion(out_temp, y_temp)
-        
-        
- 
-        print("Optimization Finished!")
          
-        accuracy = sess.run(eval_op, feed_dict={x: mnist.test.images, y: mnist.test.labels})
- 
-        print("Test Accuracy:", accuracy)
-        
+        # save the weights
+        saveWeights(W)
+         
+   
+        print("Test Accuracy:", accuracy)   
+         
         # plot accuracies vs iterations
         plt.clf()
         x = range(0, len(accuracies))
@@ -246,10 +277,13 @@ if __name__ == '__main__':
         plt.title('Accuracy vs. Iteration', fontsize=25)
         plt.ylabel('Accuracy')
         plt.xlabel('Iteration')
-        plt.savefig(saveDir + 'partA_A_acc.png')
-#         
-        file  = open(saveDir + "partA_A_info.txt",'w')
+        plt.savefig(saveDir + 'partC_A_acc.png')
+         
+         
+        file  = open(saveDir + "partC_A_info.txt",'w')
         buf = "Accuracy was %f\n" % (accuracy)
         file.write(buf)
         file.close()
-
+        
+        
+        
