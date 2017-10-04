@@ -282,6 +282,9 @@ if __name__ == '__main__':
          
         file  = open(saveDir + "partC_A_info.txt",'w')
         buf = "Accuracy was %f\n" % (accuracy)
+        buf += "Epochs %f\n" % (training_epochs)
+        buf += "Batch Size %f\n" % (batch_size)
+        buf += "Learning Rate%f\n" %(learning_rate)
         file.write(buf)
         file.close()
         

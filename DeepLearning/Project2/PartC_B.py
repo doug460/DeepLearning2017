@@ -240,6 +240,9 @@ if __name__ == '__main__':
             buf = saveDir + 'partC_B_info.txt'
             file  = open(buf,'w')
             buf = "Accuracy was %f\n" % (accuracy)
+            buf += "Epochs %f\n" % (training_epochs)
+            buf += "Batch Size %f\n" % (batch_size)
+            buf += "Learning Rate%f\n" %(learning_rate)
             file.write(buf)
             file.close()
 

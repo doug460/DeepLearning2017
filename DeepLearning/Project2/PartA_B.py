@@ -18,7 +18,7 @@ n_hidden_2 = 256
 
 # Parameters
 learning_rate = 0.01
-training_epochs = 200 # NOTE: you'll want to eventually change this 
+training_epochs = 50 # NOTE: you'll want to eventually change this 
 batch_size = 100
 display_step = 1
 
@@ -257,6 +257,9 @@ if __name__ == '__main__':
             buf = saveDir + 'partA_B_info.txt'
             file  = open(buf,'w')
             buf = "Accuracy was %f\n" % (accuracy)
+            buf += "Epochs %f\n" % (training_epochs)
+            buf += "Batch Size %f\n" % (batch_size)
+            buf += "Learning Rate%f\n" %(learning_rate)
             file.write(buf)
             file.close()
 
