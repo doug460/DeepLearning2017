@@ -177,6 +177,11 @@ if __name__ == '__main__':
             
             gety = getY(y)
             getout = getOut(output)
+            
+            # rotate stuff
+            mnist.train.images[:,:] = applyRotations(mnist.train.images)
+            mnist.validation.images[:,:] = applyRotations(mnist.validation.images)
+            mnist.test.images[:,:] = applyRotations(mnist.test.images)
 
             # Training cycle
             for epoch in range(training_epochs):
@@ -186,9 +191,7 @@ if __name__ == '__main__':
                 # Loop over all batches
                 for i in range(total_batch):
                     minibatch_x, minibatch_y = mnist.train.next_batch(batch_size)
-                    
-                    minibatch_x = applyRotations(minibatch_x)
-                    
+
                     # Fit training using batch data
                     sess.run(train_op, feed_dict={x: minibatch_x, y: minibatch_y})
                     # Compute average loss
@@ -197,7 +200,7 @@ if __name__ == '__main__':
                 if epoch % display_step == 0:
                     print("Epoch:", '%04d' % (epoch+1), "cost =", "{:.9f}".format(avg_cost))
 
-                    accuracy = sess.run(eval_op, feed_dict={x: applyRotations(mnist.validation.images), y: mnist.validation.labels})
+                    accuracy = sess.run(eval_op, feed_dict={x: mnist.validation.images, y: mnist.validation.labels})
 
                     print("Validation Error:", (1 - accuracy))
 
@@ -208,7 +211,7 @@ if __name__ == '__main__':
                     
                 
                 
-                accuracies.append(sess.run(eval_op, feed_dict={x: applyRotations(mnist.test.images), y: mnist.test.labels}))
+                accuracies.append(sess.run(eval_op, feed_dict={x: mnist.test.images, y: mnist.test.labels}))
 
             saveWeights1(W1)
             

@@ -4,13 +4,14 @@ sys.path.append('../')
 from fdl_examples.datatools import input_data
 mnist = input_data.read_data_sets("../../data/", one_hot=True)
 
-from PartC_A import applyScaling
-
 import numpy as np
 import matplotlib.pyplot as plt
 
 import tensorflow as tf
 import time, shutil, os
+
+from random import random
+from scipy.ndimage.interpolation import zoom
 
 saveDir = 'PartC Stuff/'
 
@@ -81,6 +82,28 @@ def getY(y):
 
 def getOut(output):
     return(tf.argmax(output,1))
+
+def applyScaling(array):
+    
+    for indx in range(0, array.shape[0]):
+        # seperate an single image array and put it in matrix form
+        single_array = array[indx]
+        single_image = np.reshape(single_array, (28,28))
+        
+        # scale image
+        scale_amount = 1#random() * 0.5 + 0.5
+        single_image_scale = zoom(single_image, zoom = scale_amount)
+        
+        matrix_padded = np.zeros((28,28))
+        dim = single_image_scale.shape[0]
+        start = int(28/2 - dim/2)
+        matrix_padded[start:start + dim, start:start + dim] = single_image_scale
+        
+        # return image back to array and replace in images_array
+        single_array_scale = np.reshape(matrix_padded, (784))
+        array[indx] = single_array_scale
+    
+    return(array)
 
 # create the confusion matrix
 # acutal on rows
@@ -177,6 +200,11 @@ if __name__ == '__main__':
             
             gety = getY(y)
             getout = getOut(output)
+            
+            #scale everything
+            mnist.train.images[:,:] = applyScaling(mnist.train.images)
+            mnist.validation.images[:,:] = applyScaling(mnist.validation.images)
+            mnist.test.images[:,:] = applyScaling(mnist.test.images)
 
             # Training cycle
             for epoch in range(training_epochs):
@@ -187,8 +215,6 @@ if __name__ == '__main__':
                 for i in range(total_batch):
                     minibatch_x, minibatch_y = mnist.train.next_batch(batch_size)
                     
-                    minibatch_x = applyScaling(minibatch_x)
-                    
                     # Fit training using batch data
                     sess.run(train_op, feed_dict={x: minibatch_x, y: minibatch_y})
                     # Compute average loss
@@ -197,7 +223,7 @@ if __name__ == '__main__':
                 if epoch % display_step == 0:
                     print("Epoch:", '%04d' % (epoch+1), "cost =", "{:.9f}".format(avg_cost))
 
-                    accuracy = sess.run(eval_op, feed_dict={x: applyScaling(mnist.validation.images), y: mnist.validation.labels})
+                    accuracy = sess.run(eval_op, feed_dict={x: mnist.validation.images, y: mnist.validation.labels})
 
                     print("Validation Error:", (1 - accuracy))
 
@@ -208,7 +234,7 @@ if __name__ == '__main__':
                     
                 
                 
-                accuracies.append(sess.run(eval_op, feed_dict={x: applyScaling(mnist.test.images), y: mnist.test.labels}))
+                accuracies.append(sess.run(eval_op, feed_dict={x: mnist.test.images, y: mnist.test.labels}))
 
             saveWeights1(W1)
             

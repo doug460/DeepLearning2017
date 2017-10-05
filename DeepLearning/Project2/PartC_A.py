@@ -76,7 +76,7 @@ def evaluate(output, y):
 # so 784 * 100
 def applyScaling(array):
     
-    for indx in range(0, batch_size):
+    for indx in range(0, array.shape[0]):
         # seperate an single image array and put it in matrix form
         single_array = array[indx]
         single_image = np.reshape(single_array, (28,28))
@@ -219,6 +219,11 @@ if __name__ == '__main__':
         
         # want to graph accuracies
         accuracies = []
+        
+        #scale everything
+        mnist.train.images[:,:] = applyScaling(mnist.train.images)
+        mnist.validation.images[:,:] = applyScaling(mnist.validation.images)
+        mnist.test.images[:,:] = applyScaling(mnist.test.images)
    
         # Training cycle
         for epoch in range(training_epochs):
@@ -229,7 +234,6 @@ if __name__ == '__main__':
             for i in range(total_batch):
                 minibatch_x, minibatch_y = mnist.train.next_batch(batch_size)
                  
-                minibatch_x = applyScaling(minibatch_x)
                  
                 # Fit training using batch data
                 sess.run(train_op, feed_dict={x: minibatch_x, y: minibatch_y})
@@ -239,7 +243,7 @@ if __name__ == '__main__':
             if epoch % display_step == 0:
                 print("Epoch:", '%04d' % (epoch+1), "cost =", "{:.9f}".format(avg_cost))
    
-                accuracy = sess.run(eval_op, feed_dict={x: applyScaling(mnist.validation.images), y: mnist.validation.labels})
+                accuracy = sess.run(eval_op, feed_dict={x: mnist.validation.images, y: mnist.validation.labels})
    
                 print("Validation Error:", (1 - accuracy))
    
@@ -254,7 +258,7 @@ if __name__ == '__main__':
    
         print("Optimization Finished!")
            
-        accuracy = sess.run(eval_op, feed_dict={x: applyScaling(mnist.test.images), y: mnist.test.labels})
+        accuracy = sess.run(eval_op, feed_dict={x: mnist.test.images, y: mnist.test.labels})
          
         # get outputs for comparison
         # shape is ?,10
