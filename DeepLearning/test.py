@@ -5,11 +5,11 @@ Created on Aug 25, 2017
 '''
 
 import tensorflow as tf
+import numpy as np
 
 
 if __name__ == '__main__':
     pass
 
-    hello = tf.constant('Hello, TensorFlow!')
-    sess = tf.Session()
-    print(sess.run(hello))
+    array = np.array([True, False, True])
+    print(np.sum(array))

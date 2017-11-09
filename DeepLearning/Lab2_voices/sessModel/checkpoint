@@ -1,0 +1,2 @@
+model_checkpoint_path: "sessionSave.ckpt"
+all_model_checkpoint_paths: "sessionSave.ckpt"
