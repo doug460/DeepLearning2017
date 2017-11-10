@@ -5,13 +5,22 @@ Created on Nov 9, 2017
 
 This program is to test voices with cnn
 '''
+
+import MainDir
+
 import numpy as np
-import tensorflow as tf
+import scipy as sp
+import scipy.signal
+from scipy.io import wavfile
 import matplotlib.pyplot as plt
-import random
+from sklearn.metrics import confusion_matrix
 import time
 from datetime import timedelta
-import MainDir
+import math
+import tensorflow as tf
+
+#import soundfile as sf
+import pygame
 
 npzfile = np.load(MainDir.dirData + 'saved_data_file33.npz')
 train_segs = npzfile['train_segs']
@@ -64,6 +73,9 @@ epsilon = 0.0018
 
 # track iterations throughout run
 total_iterations = 1
+
+downsample_factor = 10 # so down to 4.4 kHz
+num_samples_in_seg = 500  # then that's about 125 mseconds   
 
 
 def new_weights(shape):
@@ -291,29 +303,6 @@ def print_test_accuracy(show_example_errors=False,
                 max_sum = sum
                 
         cls_pred[speaker_indx] = max_indx
-        
-#         
-# 
-#     while i < num_test:
-#         # The ending index for the next batch is denoted j.
-#         j = min(i + test_batch_size, num_test)
-# 
-#         # Get the images from the test-set between index i and j.
-#         images = test_segs[i:j]
-# 
-#         # Get the associated labels.
-#         labels = test_labels_1h[i:j]
-# 
-#         # Create a feed-dict with these images and labels.
-#         feed_dict = {x: images,
-#                      y_true: labels}
-# 
-#         # Calculate the predicted class using TensorFlow.
-#         cls_pred[i:j] = session.run(y_pred_cls, feed_dict=feed_dict)
-# 
-#         # Set the start-index for the next batch to the
-#         # end-index of the current batch.
-#         i = j
 
     # Convenience variable for the true class-numbers of the test-set.
     cls_true = test_labels
@@ -343,10 +332,92 @@ def print_test_accuracy(show_example_errors=False,
         print("Confusion Matrix:")
         plot_confusion_matrix(cls_pred=cls_pred)
 
+# Define a function that will:
+#       read in a data file
+#       strip out 1 channel of the audio
+#       return the sound data
+#NB - only about 75% of the files you submitted were readable by Python
+def get_one_ch_from_wav(file_name):
+    sampFreq, snd = wavfile.read(file_name)
+    if np.ndim(snd) > 1:
+        snd = snd[:,0]
+    return snd,sampFreq
 
+
+def remove_sentence_gaps(sound_data, w_len = 50, std_thresh = 0.5 ):
+    # Define a function that will remove silent (or close to silent) gaps in the second array
+#     print('remove_sentence_gaps')
+#     print(sound_data.shape)
+    hw = int(w_len/2)
+    not_sil_inds = np.zeros(len(sound_data)) # one means not silent
+    stds = np.zeros(len(sound_data)) 
+    for n in range(hw,len(sound_data)-hw) :
+        current_window = sound_data[n-hw:n+hw]
+        stds[n] = current_window.std()
+        if current_window.std() > std_thresh:
+            not_sil_inds[n] = 1
+    not_silence_bool = (not_sil_inds == 1)
+    sound_nsg = sound_data[not_silence_bool]
+    return sound_nsg, stds, not_sil_inds
+
+
+def sound_to_segs(sound_data, num_samples_in_seg):
+    #Define a function that will take in a sound array, and return another 2-D array which
+# is the sound array broken into segments that are each "num_samples_in_seg" long 
+# (you defined "num_samples_in_seg" up above...)
+# leave out the segment at the end that's shorter than the rest
+# return the result 
+
+# append is slow
+# predeclare too big - then slice - then del too big
+    file_segs = np.empty([10000,num_samples_in_seg])
+    tmp = np.zeros([1,num_samples_in_seg])
+    for n,s in enumerate(range(0,len(sound_data),num_samples_in_seg)):
+        tmp1 = sound_data[s:(s+num_samples_in_seg)]
+        if tmp1.shape[0] == num_samples_in_seg:
+            file_segs[n,:] = tmp1
+#             tmp[0,:] = tmp1
+#             file_segs = np.append(file_segs,tmp,axis=0)
+    file_segs = file_segs[0:n,:]
+    return file_segs
+
+
+def reshapeSeg(segment):
+    # reshape segment
+    temp = np.expand_dims(segment,axis= 1)
+    temp = np.expand_dims(temp,axis= 3)
+    
+    return temp
+        
+    
+    
+    return(reshape)
+
+
+def vote(y_pred_cls):
+    # vote on maximum histogram
+    max_indx = 0
+    max_sum = 0
+    for indx in range(num_classes):
+        sum = np.sum(y_pred_cls == indx)
+        if(sum > max_sum):
+            max_indx = indx
+            max_sum = sum
+    
+    return(max_indx)
 
 if __name__ == '__main__':
     pass
+
+    # import files indx
+    fname = "speakers_indx.txt"
+
+    with open(fname) as f:
+        speaker_indx = f.readlines()
+    # you may also want to remove whitespace characters like `\n` at the end of each line
+    speaker_indx = [x.strip() for x in speaker_indx] 
+
+
 
     tf.reset_default_graph()
     
@@ -403,12 +474,41 @@ if __name__ == '__main__':
     
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32)) 
 
+
+
     
     with tf.Session() as sess:
     
         tf.train.Saver().restore(sess, 'sessModel/sessionSave.ckpt')
         
-        print_test_accuracy()
+        
+        # Check that what you just wrote will actually read in a file and return a valid array
+        sound_data,sampFreq = get_one_ch_from_wav(MainDir.dirTest + 'out.wav')
+        
+        sound_data = sp.signal.decimate(sound_data, downsample_factor,zero_phase = True)
+        # whiten
+        sound_data = (sound_data - sound_data.mean())/np.std(sound_data)
+        # remove silence gaps
+        sound_ns, stds, not_sil_inds = remove_sentence_gaps(sound_data)
+        sound_data = sound_ns
+        
+        group_segs = sound_to_segs(sound_data, num_samples_in_seg)
+        
+        group_segs = reshapeSeg(group_segs)
+        
+        feed_dict = {x: group_segs}
+        
+        out = sess.run(y_pred_cls, feed_dict)
+        
+        print("overall the vote for who said this is ")
+        print(speaker_indx[vote(out)])
+        
+        
+        
+        
+        
+        
+        
 
 
 

@@ -25,7 +25,7 @@ val_segs = npzfile['val_segs']
 val_labels = npzfile['val_labels']
 val_labels_1h = npzfile['val_labels_1h']
 
-num_iterations = 10
+num_iterations = 100
 
 # Convolutional Layer 1.
 filter_size1 = 20          # Convolution filters are 5 x 5 pixels.
@@ -230,7 +230,7 @@ def optimize(num_iterations):
         # Print status every 100 iterations.
         if i % 100 == 0:
             # Calculate the accuracy on the training-set.
-            acc = session.run(accuracy, feed_dict=feed_dict_train)
+            acc = sess.run(accuracy, feed_dict=feed_dict_train)
 
             # Message for printing.
             msg = "Optimization Iteration: {0:>6}, Training Accuracy: {1:>6.1%}"
