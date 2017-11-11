@@ -264,7 +264,117 @@ def optimize(num_iterations):
 
 # Split the test-set into smaller batches of this size.
 
+def print_valid_accuracy(show_example_errors=False,
+                        show_confusion_matrix=False):
 
+    # Number of images in the test-set.
+    num_test = len(val_segs)
+
+    # Allocate an array for the predicted classes which
+    # will be calculated in batches and filled into this array.
+    cls_pred = np.zeros(shape=num_test, dtype=np.int)
+
+    # Now calculate the predicted classes for the batches.
+    # We will just iterate through all the batches.
+    # There might be a more clever and Pythonic way of doing this.
+
+    # The starting index for the next batch is denoted i.
+    i = 0
+    
+    # do voting for a set of speaker data
+    for speaker in range(num_classes):
+        speaker_indx = val_labels == speaker
+        
+        x_segs = val_segs[speaker_indx]
+        labels = val_labels_1h[speaker_indx]
+        
+        feed_dict = {x:x_segs, y_true:labels}
+        
+        cls_pred[speaker_indx] = sess.run(y_pred_cls, feed_dict=feed_dict)
+        
+        max_indx = 0
+        max_sum = 0
+        for indx in range(num_classes):
+            sum = np.sum(cls_pred[speaker_indx] == indx)
+            if(sum > max_sum):
+                max_indx = indx
+                max_sum = sum
+                
+        cls_pred[speaker_indx] = max_indx
+
+    # Convenience variable for the true class-numbers of the test-set.
+    cls_true = val_labels
+
+    # Create a boolean array whether each image is correctly classified.
+    correct = np.array(cls_true == cls_pred)
+
+    # Calculate the number of correctly classified images.
+    # When summing a boolean array, False means 0 and True means 1.
+    correct_sum = correct.sum()
+
+    # Classification accuracy is the number of correctly classified
+    # images divided by the total number of images in the test-set.
+    acc = float(correct_sum) / num_test
+
+    # Print the accuracy.
+    msg = "Accuracy on valid-Set: {0:.1%} ({1} / {2})"
+    print(msg.format(acc, correct_sum, num_test))
+
+def print_train_accuracy(show_example_errors=False,
+                        show_confusion_matrix=False):
+
+    # Number of images in the test-set.
+    num_test = len(train_segs)
+
+    # Allocate an array for the predicted classes which
+    # will be calculated in batches and filled into this array.
+    cls_pred = np.zeros(shape=num_test, dtype=np.int)
+
+    # Now calculate the predicted classes for the batches.
+    # We will just iterate through all the batches.
+    # There might be a more clever and Pythonic way of doing this.
+
+    # The starting index for the next batch is denoted i.
+    i = 0
+    
+    # do voting for a set of speaker data
+    for speaker in range(num_classes):
+        speaker_indx = train_labels == speaker
+        
+        x_segs = train_segs[speaker_indx]
+        labels = train_labels_1h[speaker_indx]
+        
+        feed_dict = {x:x_segs, y_true:labels}
+        
+        cls_pred[speaker_indx] = sess.run(y_pred_cls, feed_dict=feed_dict)
+        
+        max_indx = 0
+        max_sum = 0
+        for indx in range(num_classes):
+            sum = np.sum(cls_pred[speaker_indx] == indx)
+            if(sum > max_sum):
+                max_indx = indx
+                max_sum = sum
+                
+        cls_pred[speaker_indx] = max_indx
+
+    # Convenience variable for the true class-numbers of the test-set.
+    cls_true = train_labels
+
+    # Create a boolean array whether each image is correctly classified.
+    correct = (cls_true == cls_pred)
+
+    # Calculate the number of correctly classified images.
+    # When summing a boolean array, False means 0 and True means 1.
+    correct_sum = correct.sum()
+
+    # Classification accuracy is the number of correctly classified
+    # images divided by the total number of images in the test-set.
+    acc = float(correct_sum) / num_test
+
+    # Print the accuracy.
+    msg = "Accuracy on Test-Set: {0:.1%} ({1} / {2})"
+    print(msg.format(acc, correct_sum, num_test))
 
 def print_test_accuracy(show_example_errors=False,
                         show_confusion_matrix=False):
@@ -481,28 +591,31 @@ if __name__ == '__main__':
     
         tf.train.Saver().restore(sess, 'sessModel/sessionSave.ckpt')
         
+        print_train_accuracy()
+        print_valid_accuracy()
+        print_test_accuracy()
         
         # Check that what you just wrote will actually read in a file and return a valid array
         sound_data,sampFreq = get_one_ch_from_wav(MainDir.dirTest + 'out.wav')
-        
+         
         sound_data = sp.signal.decimate(sound_data, downsample_factor,zero_phase = True)
         # whiten
         sound_data = (sound_data - sound_data.mean())/np.std(sound_data)
         # remove silence gaps
         sound_ns, stds, not_sil_inds = remove_sentence_gaps(sound_data)
         sound_data = sound_ns
-        
+         
         group_segs = sound_to_segs(sound_data, num_samples_in_seg)
-        
+         
         group_segs = reshapeSeg(group_segs)
-        
+         
         feed_dict = {x: group_segs}
-        
+         
         out = sess.run(y_pred_cls, feed_dict)
-        
+         
         print("overall the vote for who said this is ")
         print(speaker_indx[vote(out)])
-        
+#         
         
         
         
