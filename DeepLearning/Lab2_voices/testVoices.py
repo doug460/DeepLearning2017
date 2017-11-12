@@ -508,13 +508,16 @@ def vote(y_pred_cls):
     # vote on maximum histogram
     max_indx = 0
     max_sum = 0
+    sum = np.zeros(num_classes)
     for indx in range(num_classes):
-        sum = np.sum(y_pred_cls == indx)
-        if(sum > max_sum):
-            max_indx = indx
-            max_sum = sum
+        sum[indx] = np.sum(y_pred_cls == indx)
     
-    return(max_indx)
+    order = np.zeros(num_classes)
+    for indx in range(num_classes):
+        order[indx] = np.argmax(sum)
+        sum[np.argmax(sum)] = 0
+        
+    return(order[0:5].astype(int))
 
 if __name__ == '__main__':
     pass
@@ -613,8 +616,9 @@ if __name__ == '__main__':
          
         out = sess.run(y_pred_cls, feed_dict)
          
-        print("overall the vote for who said this is ")
-        print(speaker_indx[vote(out)])
+        print("Overal vote for top 5 speakers")
+        for indx in vote(out):
+            print(speaker_indx[indx])
 #         
         
         
